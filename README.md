@@ -1,0 +1,3 @@
+# evdev
+
+This was the evdev and uinput kernel modules as were present in the FreeBSD source tree. The goal of this repository will be to get this code working inside of the OpenBSD kernel...
