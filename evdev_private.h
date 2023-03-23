@@ -30,21 +30,22 @@
 #ifndef	_DEV_EVDEV_EVDEV_PRIVATE_H
 #define	_DEV_EVDEV_EVDEV_PRIVATE_H
 
-#include <sys/bitstring.h>
-#include <sys/ck.h>
-#include <sys/epoch.h>
-#include <sys/kbio.h>
+#include <dev/evdev/bitstring.h>
+//#include <sys/ck.h>
+//#include <sys/epoch.h>
+//#include <sys/kbio.h>
+#include <sys/timeout.h>
 #include <sys/lock.h>
 #include <sys/malloc.h>
 #include <sys/mutex.h>
 #include <sys/queue.h>
 #include <sys/selinfo.h>
-#include <sys/sx.h>
+//#include <sys/sx.h>
 #include <sys/sysctl.h>
 
 #include <dev/evdev/evdev.h>
 #include <dev/evdev/input.h>
-#include <dev/kbd/kbdreg.h>
+//#include <dev/kbd/kbdreg.h>
 
 #define	NAMELEN		80
 
@@ -115,9 +116,9 @@ struct evdev_dev
 	struct cdev *		ev_cdev;
 	int			ev_unit;
 	enum evdev_lock_type	ev_lock_type;
-	struct mtx *		ev_state_lock;	/* State lock */
-	struct mtx		ev_mtx;		/* Internal state lock */
-	struct sx		ev_list_lock;	/* Client list lock */
+	struct mutex *		ev_state_lock;	/* State lock */
+	struct mutex		ev_mtx;		/* Internal state lock */
+	//struct sx		ev_list_lock;	/* Client list lock */
 	struct input_id		ev_id;
 	struct evdev_client *	ev_grabber;			/* (s) */
 	size_t			ev_report_size;
@@ -137,7 +138,7 @@ struct evdev_dev
 
 	/* Repeat parameters & callout: */
 	int			ev_rep[REP_CNT];		/* (s) */
-	struct callout		ev_rep_callout;			/* (s) */
+	struct timeout		ev_rep_callout;			/* (s) */
 	uint16_t		ev_rep_key;			/* (s) */
 
 	/* State: */
@@ -219,7 +220,7 @@ EVDEV_LIST_LOCK_SIG(struct evdev_dev *evdev)
 struct evdev_client
 {
 	struct evdev_dev *	ec_evdev;
-	struct mtx		ec_buffer_mtx;	/* Client queue lock */
+	struct mutex		ec_buffer_mtx;	/* Client queue lock */
 	size_t			ec_buffer_size;
 	size_t			ec_buffer_head;		/* (q) */
 	size_t			ec_buffer_tail;		/* (q) */

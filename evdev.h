@@ -30,10 +30,10 @@
 #define	_DEV_EVDEV_EVDEV_H
 
 #include <sys/types.h>
-#include <sys/epoch.h>
-#include <sys/kbio.h>
+//#include <sys/epoch.h>
+//#include <sys/kbio.h>
 #include <dev/evdev/input.h>
-#include <dev/kbd/kbdreg.h>
+//#include <dev/kbd/kbdreg.h>
 
 #define	NAMELEN		80
 
@@ -137,7 +137,7 @@ void evdev_set_serial(struct evdev_dev *, const char *);
 void evdev_set_methods(struct evdev_dev *, void *,
     const struct evdev_methods *);
 int evdev_register(struct evdev_dev *);
-int evdev_register_mtx(struct evdev_dev *, struct mtx *);
+int evdev_register_mtx(struct evdev_dev *, struct mutex *);
 int evdev_unregister(struct evdev_dev *);
 int evdev_push_event(struct evdev_dev *, uint16_t, uint16_t, int32_t);
 void evdev_support_prop(struct evdev_dev *, uint16_t);

@@ -27,12 +27,12 @@
  * $FreeBSD$
  */
 
-#include "opt_evdev.h"
+//#include "opt_evdev.h"
 
 #include <sys/param.h>
-#include <sys/bitstring.h>
+#include <dev/evdev/bitstring.h>
 #include <sys/conf.h>
-#include <sys/epoch.h>
+//#include <sys/epoch.h>
 #include <sys/filio.h>
 #include <sys/fcntl.h>
 #include <sys/kernel.h>
