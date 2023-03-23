@@ -34,6 +34,7 @@
 //#include <sys/kbio.h>
 #include <dev/evdev/input.h>
 //#include <dev/kbd/kbdreg.h>
+#include <dev/wscons/wsksymvar.h>
 
 #define	NAMELEN		80
 
