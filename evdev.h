@@ -170,7 +170,7 @@ void evdev_support_all_known_keys(struct evdev_dev *);
 uint16_t evdev_scancode2key(int *, int);
 void evdev_push_mouse_btn(struct evdev_dev *, int);
 void evdev_push_leds(struct evdev_dev *, int);
-void evdev_push_repeats(struct evdev_dev *, keyboard_t *);
+void evdev_push_repeats(struct evdev_dev *, kbd_t *);
 void evdev_support_nfingers(struct evdev_dev *, int);
 void evdev_push_nfingers(struct evdev_dev *, int);
 
