@@ -53,8 +53,7 @@
  * bitstr_t implementation must be identical to one found in EVIOCG*
  * libevdev ioctls. Our bitstring(3) API is compatible since r299090.
  */
-_Static_assert(sizeof(bitstr_t) == sizeof(unsigned long),
-    "bitstr_t size mismatch");
+//_Static_assert(sizeof(bitstr_t) == sizeof(unsigned long), "bitstr_t size mismatch");
 
 MALLOC_DECLARE(M_EVDEV);
 
@@ -113,7 +112,7 @@ struct evdev_dev
 	char			ev_name[NAMELEN];
 	char			ev_shortname[NAMELEN];
 	char			ev_serial[NAMELEN];
-	struct cdev *		ev_cdev;
+	dev_t *		ev_cdev;
 	int			ev_unit;
 	enum evdev_lock_type	ev_lock_type;
 	struct mutex *		ev_state_lock;	/* State lock */

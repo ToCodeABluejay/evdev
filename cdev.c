@@ -48,18 +48,6 @@
 #include <dev/evdev/evdev_private.h>
 #include <dev/evdev/input.h>
 
-#ifdef COMPAT_FREEBSD32
-#include <sys/mount.h>
-#include <sys/sysent.h>
-#include <compat/freebsd32/freebsd32.h>
-struct input_event32 {
-	struct timeval32	time;
-	uint16_t		type;
-	uint16_t		code;
-	int32_t			value;
-};
-#endif
-
 #ifdef EVDEV_DEBUG
 #define	debugf(client, fmt, args...)	printf("evdev cdev: "fmt"\n", ##args)
 #else
@@ -79,7 +67,7 @@ static int evdev_kqread(struct knote *kn, long hint);
 static void evdev_kqdetach(struct knote *kn);
 static void evdev_dtor(void *);
 static int evdev_ioctl_eviocgbit(struct evdev_dev *, int, int, caddr_t,
-    struct thread *);
+    struct proc *);
 static void evdev_client_filter_queue(struct evdev_client *, uint16_t);
 
 static struct cdevsw evdev_cdevsw = {
@@ -101,7 +89,7 @@ static struct filterops evdev_cdev_filterops = {
 };
 
 static int
-evdev_open(struct cdev *dev, int oflags, int devtype, struct thread *td)
+evdev_open(dev_t *dev, int oflags, int devtype, struct proc *td)
 {
 	struct evdev_dev *evdev = dev->si_drv1;
 	struct evdev_client *client;
