@@ -33,6 +33,7 @@
 #include <dev/evdev/bitstring.h>
 #include <sys/conf.h>
 //#include <sys/epoch.h>
+#include <sys/wait.h>
 #include <sys/filio.h>
 #include <sys/fcntl.h>
 #include <sys/kernel.h>
@@ -56,12 +57,13 @@
 
 #define	DEF_RING_REPORTS	8
 
-static d_open_t		evdev_open;
-static d_read_t		evdev_read;
-static d_write_t	evdev_write;
-static d_ioctl_t	evdev_ioctl;
-static d_poll_t		evdev_poll;
-static d_kqfilter_t	evdev_kqfilter;
+
+/*static int  evdev_open;
+static int		evdev_read;
+static int	evdev_write;
+static int	evdev_ioctl;
+static int		evdev_poll;
+static int	evdev_kqfilter;*/
 
 static int evdev_kqread(struct knote *kn, long hint);
 static void evdev_kqdetach(struct knote *kn);
@@ -70,16 +72,16 @@ static int evdev_ioctl_eviocgbit(struct evdev_dev *, int, int, caddr_t,
     struct proc *);
 static void evdev_client_filter_queue(struct evdev_client *, uint16_t);
 
-static struct cdevsw evdev_cdevsw = {
-	.d_version = D_VERSION,
-	.d_open = evdev_open,
+/*static struct cdevsw evdev_cdevsw = {
+	//.d_version = D_VERSION,
+	.d_open = * evdev_open,
 	.d_read = evdev_read,
 	.d_write = evdev_write,
 	.d_ioctl = evdev_ioctl,
 	.d_poll = evdev_poll,
 	.d_kqfilter = evdev_kqfilter,
 	.d_name = "evdev",
-};
+};*/
 
 static struct filterops evdev_cdev_filterops = {
 	.f_isfd = 1,
@@ -112,7 +114,7 @@ evdev_open(dev_t *dev, int oflags, int devtype, struct proc *td)
 	client->ec_buffer_ready = 0;
 
 	client->ec_evdev = evdev;
-	mtx_init(&client->ec_buffer_mtx, "evclient", "evdev", MTX_DEF);
+	mtx_init(&client->ec_buffer_mtx, 0);
 	knlist_init_mtx(&client->ec_selp.si_note, &client->ec_buffer_mtx);
 
 	ret = EVDEV_LIST_LOCK_SIG(evdev);
@@ -141,6 +143,7 @@ out:
 static void
 evdev_dtor(void *data)
 {
+	const char* msg = "evdev: Awaiting lock...";
 	struct evdev_client *client = (struct evdev_client *)data;
 
 	EVDEV_LIST_LOCK(client->ec_evdev);
@@ -149,12 +152,12 @@ evdev_dtor(void *data)
 	EVDEV_LIST_UNLOCK(client->ec_evdev);
 
 	if (client->ec_evdev->ev_lock_type != EV_LOCK_MTX)
-		epoch_wait_preempt(INPUT_EPOCH);
+		tsleep(&client->ec_evdev->ev_list_lock, 2, msg, INPUT_EPOCH);
 	knlist_clear(&client->ec_selp.si_note, 0);
 	seldrain(&client->ec_selp);
 	knlist_destroy(&client->ec_selp.si_note);
 	funsetown(&client->ec_sigio);
-	mtx_destroy(&client->ec_buffer_mtx);
+	mtx_leave(&client->ec_buffer_mtx);
 	free(client, M_EVDEV);
 }
 

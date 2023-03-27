@@ -34,18 +34,16 @@
 //#include <sys/ck.h>
 //#include <sys/epoch.h>
 //#include <sys/kbio.h>
-#include <sys/timeout.h>
+#include <sys/param.h>
 #include <sys/lock.h>
 #include <sys/malloc.h>
 #include <sys/mutex.h>
 #include <sys/queue.h>
 #include <sys/selinfo.h>
-//#include <sys/sx.h>
 #include <sys/sysctl.h>
 
 #include <dev/evdev/evdev.h>
 #include <dev/evdev/input.h>
-//#include <dev/kbd/kbdreg.h>
 
 #define	NAMELEN		80
 
@@ -53,7 +51,6 @@
  * bitstr_t implementation must be identical to one found in EVIOCG*
  * libevdev ioctls. Our bitstring(3) API is compatible since r299090.
  */
-//_Static_assert(sizeof(bitstr_t) == sizeof(unsigned long), "bitstr_t size mismatch");
 
 MALLOC_DECLARE(M_EVDEV);
 
@@ -98,7 +95,7 @@ enum evdev_clock_id
  *    deprecated as it causes ev_open and ev_close handlers to be called with
  *    parent driver mutex taken.
  */
-#define	INPUT_EPOCH	global_epoch_preempt
+#define	INPUT_EPOCH	5
 
 enum evdev_lock_type
 {
@@ -117,7 +114,7 @@ struct evdev_dev
 	enum evdev_lock_type	ev_lock_type;
 	struct mutex *		ev_state_lock;	/* State lock */
 	struct mutex		ev_mtx;		/* Internal state lock */
-	//struct sx		ev_list_lock;	/* Client list lock */
+	struct mutex		ev_list_lock;	/* Client list lock */
 	struct input_id		ev_id;
 	struct evdev_client *	ev_grabber;			/* (s) */
 	size_t			ev_report_size;
@@ -163,7 +160,7 @@ struct evdev_dev
 	void *			ev_softc;
 
 	/* Sysctl: */
-	struct sysctl_ctx_list	ev_sysctl_ctx;
+	/*struct sysctl_ctx_list	ev_sysctl_ctx;
 
 	LIST_ENTRY(evdev_dev) ev_link;
 	CK_SLIST_HEAD(, evdev_client) ev_clients;		/* (l) */
@@ -171,8 +168,8 @@ struct evdev_dev
 
 #define	SYSTEM_CONSOLE_LOCK	&Giant
 
-#define	EVDEV_LOCK(evdev)		mtx_lock((evdev)->ev_state_lock)
-#define	EVDEV_UNLOCK(evdev)		mtx_unlock((evdev)->ev_state_lock)
+#define	EVDEV_LOCK(evdev)		MUTEX_ASSERT_LOCKED((evdev)->ev_state_lock)
+#define	EVDEV_UNLOCK(evdev)		MUTEX_ASSERT_UNLOCKED((evdev)->ev_state_lock)
 #define	EVDEV_LOCK_ASSERT(evdev)	do {				\
 	if ((evdev)->ev_state_lock != SYSTEM_CONSOLE_LOCK)		\
 		mtx_assert((evdev)->ev_state_lock, MA_OWNED);		\
@@ -192,25 +189,25 @@ struct evdev_dev
 	if ((evdev)->ev_lock_type == EV_LOCK_MTX)			\
 		EVDEV_LOCK(evdev);					\
 	else								\
-		sx_xlock(&(evdev)->ev_list_lock);			\
+		mtx_enter(&(evdev)->ev_list_lock);			\
 } while (0)
 #define	EVDEV_LIST_UNLOCK(evdev)	do {				\
 	if ((evdev)->ev_lock_type == EV_LOCK_MTX)			\
 		EVDEV_UNLOCK(evdev);					\
 	else								\
-		sx_unlock(&(evdev)->ev_list_lock);			\
+		mtx_leave(&(evdev)->ev_list_lock);			\
 } while (0)
-#define	EVDEV_LIST_LOCK_ASSERT(evdev)	do {				\
+/*#define	EVDEV_LIST_LOCK_ASSERT(evdev)	do {				\
 	if ((evdev)->ev_lock_type == EV_LOCK_MTX)			\
 		EVDEV_LOCK_ASSERT(evdev);				\
 	else								\
 		sx_assert(&(evdev)->ev_list_lock, MA_OWNED);		\
-} while (0)
+} while (0)*/
 static inline int
 EVDEV_LIST_LOCK_SIG(struct evdev_dev *evdev)
 {
 	if (evdev->ev_lock_type == EV_LOCK_MTX) {
-		EVDEV_LOCK(evdev);
+		//EVDEV_LOCK(evdev); //Do not believe this is necessary
 		return (0);
 	}
 	return (sx_xlock_sig(&evdev->ev_list_lock));
@@ -232,7 +229,7 @@ struct evdev_client
 	bool			ec_blocked;		/* (q) */
 	bool			ec_selected;		/* (q) */
 
-	CK_SLIST_ENTRY(evdev_client) ec_link;		/* (l) */
+	//CK_SLIST_ENTRY(evdev_client) ec_link;		/* (l) */
 
 	struct input_event	ec_buffer[];		/* (q) */
 };
